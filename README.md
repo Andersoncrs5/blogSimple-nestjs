@@ -51,8 +51,8 @@ This project is a backend API built with **NestJS** and **Fastify**, designed fo
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-repo-url.git
-   cd your-project-folder
+   git clone https://github.com/Andersoncrs5/blogSimple-nestjs.git
+   cd project
    ```
 2. Install dependencies:
    ```sh
@@ -60,12 +60,8 @@ This project is a backend API built with **NestJS** and **Fastify**, designed fo
    ```
 3. Configure environment variables:
    - Create a `.env` file based on `.env.example`.
-   - Set database credentials and JWT secrets.
-4. Run database migrations:
-   ```sh
-   npm run typeorm migration:run
-   ```
-5. Start the application:
+   - Set database credentials
+4. Start the application:
    ```sh
    npm run start:dev
    ```
