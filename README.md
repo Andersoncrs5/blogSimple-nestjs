@@ -78,7 +78,6 @@ http://localhost:3000/api
 
 Feel free to fork this project and submit pull requests with improvements or bug fixes.
 
-## License
+## nest features
 
-This project is licensed under the MIT License.
-
+jwt
