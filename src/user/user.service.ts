@@ -66,9 +66,7 @@ export class UserService {
       await queryRunner.manager.update(User, id, updateUserDto);
       await queryRunner.commitTransaction();
 
-      const userUpdated: User | null = await queryRunner.manager.findOne(User, { where: { id } });
-
-      return userUpdated;
+      return await queryRunner.manager.findOne(User, { where: { id } });
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -86,7 +84,7 @@ export class UserService {
       await queryRunner.manager.delete(User, id);
       await queryRunner.commitTransaction();
 
-      return 'User deleted with id : ' + id;
+      return 'User deleted with id';
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -104,6 +102,10 @@ export class UserService {
         throw new UnauthorizedException('Invalid credentials');
       }
   
+      if (foundUser.isBlocked == true) {
+        throw new UnauthorizedException('You are blocked!!!');
+      }
+
       const isPasswordCorrect = await CryptoService.compare(userDto.password, foundUser.password);
   
       if (!isPasswordCorrect) {

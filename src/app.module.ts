@@ -16,6 +16,8 @@ import { FavoritePost } from './favorite_post/entities/favorite_post.entity';
 import { Comment } from "src/comment/entities/comment.entity";
 import { Category } from './category/entities/category.entity';
 import { AuthModule } from './auth/auth.module';
+import { AdmModule } from './adm/adm.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { AuthModule } from './auth/auth.module';
     CategoryModule,
     LikeModule,
     AuthModule,
+    AdmModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

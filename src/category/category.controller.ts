@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, HttpStatus, HttpCode } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -13,21 +13,25 @@ export class CategoryController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
+  @HttpCode(HttpStatus.CREATED)
   async create(@Req() req, @Body() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(+req.user.sub, createCategoryDto);
   }
 
   @Get()
+  @HttpCode(HttpStatus.FOUND)
   async findAll() {
     return await this.categoryService.findAll();
   }
 
   @Get(':id')
+  @HttpCode(HttpStatus.FOUND)
   async findOne(@Param('id') id: string) {
     return await this.categoryService.findOne(+id);
   }
 
   @Patch(':id')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   async update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
@@ -37,6 +41,7 @@ export class CategoryController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string) {
     return this.categoryService.remove(+id);
   }
@@ -44,6 +49,7 @@ export class CategoryController {
   @Get('/changeStatusActive/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
   async changeStatusActive(@Param('id') id: string) {
     return this.categoryService.ChangeStatusActive(+id);
   }

@@ -46,6 +46,7 @@ This project is a backend API built with **NestJS** and **Fastify**, designed fo
   - Environment variable management with dotenv.
 - **API Documentation:** Swagger.
 - **Validation:** DTOs with class-validator.
+- **JWt:**
 
 ## Installation & Setup
 
@@ -80,11 +81,10 @@ Feel free to fork this project and submit pull requests with improvements or bug
 
 ## novelties
 
-- JWT 
-- Optimizations
+- system adm
 
 ## next features
 
 - table notifications
-- system adm
 - table flowers
+- recover password
