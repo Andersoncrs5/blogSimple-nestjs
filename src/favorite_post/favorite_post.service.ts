@@ -5,16 +5,16 @@ import { FavoritePost } from './entities/favorite_post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
+import { UserService } from 'src/user/user.service';
+import { PostService } from 'src/post/post.service';
 
 @Injectable()
 export class FavoritePostService {
   constructor(
     @InjectRepository(FavoritePost)
     private readonly repository: Repository<FavoritePost>,
-    @InjectRepository(Post)
-    private readonly postRepository: Repository<Post>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userService : UserService,
+    private readonly postService : PostService,
   ) {}
 
   async create(createFavoritePostDto: CreateFavoritePostDto): Promise<FavoritePost> {
@@ -22,11 +22,8 @@ export class FavoritePostService {
     await queryRunner.startTransaction();
 
     try {
-      const user = await this.userRepository.findOne({ where: { id: createFavoritePostDto.userId } });
-      if (!user) throw new NotFoundException(`User not found with id ${createFavoritePostDto.userId}`);
-
-      const post = await this.postRepository.findOne({ where: { id: createFavoritePostDto.postId } });
-      if (!post) throw new NotFoundException(`Post not found with id ${createFavoritePostDto.postId}`);
+      const user = await this.userService.findOne(createFavoritePostDto.userId);
+      const post = await this.postService.findOne(createFavoritePostDto.postId);
 
       const existingFavorite = await this.repository.findOne({ where: { user: { id: user.id }, post: { id: post.id } } });
       if (existingFavorite) throw new BadRequestException('This post is already in favorites');
@@ -45,11 +42,7 @@ export class FavoritePostService {
   }
 
   async findAllOfUser(id: number): Promise<FavoritePost[]> {
-    if (!id) throw new BadRequestException('Id is required');
-
-    const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) throw new NotFoundException(`User not found with id ${id}`);
-
+    const user = await this.userService.findOne(id);
     return this.repository.find({ where: { user: { id } }, relations: ['post'] });
   }
 

@@ -5,16 +5,16 @@ import { Like } from './entities/like.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
+import { UserService } from 'src/user/user.service';
+import { PostService } from 'src/post/post.service';
 
 @Injectable()
 export class LikeService {
   constructor(
     @InjectRepository(Like)
     private readonly repository: Repository<Like>,
-    @InjectRepository(Post)
-    private readonly postRepository: Repository<Post>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userService : UserService,
+    private readonly postService : PostService,
   ) {}
 
   async create(createLikeDto: CreateLikeDto): Promise<Like> {
@@ -22,11 +22,9 @@ export class LikeService {
     await queryRunner.startTransaction();
 
     try {
-      const user = await this.userRepository.findOne({ where: { id: createLikeDto.userId } });
-      if (!user) throw new NotFoundException(`User not found with id ${createLikeDto.userId}`);
+      const user = await this.userService.findOne(createLikeDto.userId);
 
-      const post = await this.postRepository.findOne({ where: { id: createLikeDto.postId } });
-      if (!post) throw new NotFoundException(`Post not found with id ${createLikeDto.postId}`);
+      const post = await this.postService.findOne(createLikeDto.postId);
 
       const existingLike = await this.repository.findOne({ where: { user: { id: user.id }, post: { id: post.id } } });
       if (existingLike) throw new BadRequestException('This post is already liked');
@@ -43,12 +41,9 @@ export class LikeService {
     }
   }
 
-  async findAllofUser(id: number): Promise<Like[]> {
+  async findAllOfUser(id: number): Promise<Like[]> {
     if (!id) throw new BadRequestException('Id is required');
-
-    const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) throw new NotFoundException(`User not found with id ${id}`);
-
+    const user = await this.userService.findOne(id);
     return this.repository.find({ where: { user: { id } } });
   }
 
@@ -68,8 +63,7 @@ export class LikeService {
     await queryRunner.startTransaction();
 
     try {
-      const like = await queryRunner.manager.findOne(Like, { where: { id } });
-      if (!like) throw new NotFoundException(`Like not found with id: ${id}`);
+      const like = await this.findOne(id);
 
       await queryRunner.manager.delete(Like, id);
       await queryRunner.commitTransaction();
@@ -85,15 +79,7 @@ export class LikeService {
 
   async CountLikeByPost(id: number): Promise<number> {
     try {
-      if (!id || isNaN(id) || id <= 0) {
-        throw new BadRequestException('Invalid post ID');
-      }
-
-      const postExists = await this.postRepository.findOne({ where: { id } });
-
-      if (!postExists) {
-        throw new NotFoundException(`Post with ID ${id} not found`);
-      }
+      const postExists = await this.postService.findOne(id);
 
       return await this.repository.count({ where: { post: { id } } });
     } catch (e) {

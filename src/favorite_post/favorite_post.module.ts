@@ -3,11 +3,11 @@ import { FavoritePostService } from './favorite_post.service';
 import { FavoritePostController } from './favorite_post.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FavoritePost } from './entities/favorite_post.entity';
-import { Post } from 'src/post/entities/post.entity';
-import { User } from 'src/user/entities/user.entity';
+import { UserModule } from 'src/user/user.module';
+import { PostModule } from 'src/post/post.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([FavoritePost, User, Post])], 
+  imports: [TypeOrmModule.forFeature([FavoritePost]), UserModule, PostModule ], 
   controllers: [FavoritePostController],
   providers: [FavoritePostService],
 })

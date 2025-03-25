@@ -15,6 +15,7 @@ import { Like } from './like/entities/like.entity';
 import { FavoritePost } from './favorite_post/entities/favorite_post.entity';
 import { Comment } from "src/comment/entities/comment.entity";
 import { Category } from './category/entities/category.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { Category } from './category/entities/category.entity';
     FavoritePostModule,
     CategoryModule,
     LikeModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

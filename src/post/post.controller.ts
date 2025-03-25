@@ -1,15 +1,19 @@
-import { Controller, Get, Post, Body, Put, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('post')
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  @Post(':id')
-  async create(@Param('id') id: number, @Body() createPostDto: CreatePostDto) {
-    return await this.postService.create(id, createPostDto);
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async create(@Req() req, @Body() createPostDto: CreatePostDto) {
+    return await this.postService.create(+req.user.sub, createPostDto);
   }
 
   @Get()
@@ -17,9 +21,11 @@ export class PostController {
     return await this.postService.findAll();
   }
 
-  @Get('/findAllOfUser/:id')
-  async findAllOfUser(@Param('id') id: number) {
-    return await this.postService.findAllOfUser(id);
+  @Get('/findAllOfUser')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async findAllOfUser(@Req() req) {
+    return await this.postService.findAllOfUser(+req.user.sub);
   }
 
   @Get(':id')

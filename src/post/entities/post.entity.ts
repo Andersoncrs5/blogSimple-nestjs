@@ -19,6 +19,9 @@ export class Post {
     @Column({ default: true })
     isActived: boolean;
 
+    @Column( {default: false })
+    isBlocked: boolean = false;
+
     @ManyToOne(() => User, (user) => user.posts, { onDelete : 'CASCADE' } )
     user: User
 

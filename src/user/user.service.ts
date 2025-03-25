@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,26 +6,29 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm/repository/Repository';
 import { CryptoService } from 'CryptoService';
 import { LoginUserDTO } from './dto/login-user.dto';
+import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private readonly repository: Repository<User>
-  ){}
+    private readonly repository: Repository<User>,
+    private readonly authService: AuthService,
+  ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto) {
     const queryRunner = this.repository.manager.connection.createQueryRunner();
     await queryRunner.startTransaction();
     
     try {
       const user: User = queryRunner.manager.create(User, createUserDto);
-      await queryRunner.manager.save(user);
+      const userSave: User = await queryRunner.manager.save(user);
       await queryRunner.commitTransaction();
-      return user;
+
+      return this.authService.token(userSave);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      throw new InternalServerErrorException(error);
     } finally {
       await queryRunner.release();
     }
@@ -33,19 +36,19 @@ export class UserService {
 
   async findOne(id: number): Promise<User> {
     try {
-      if(!id) {
-        throw new BadRequestException('Id is required');
+      if (!id || isNaN(id) || id <= 0) {
+        throw new BadRequestException('ID must be a positive number');
       }
 
       const user: User | null = await this.repository.findOne({ where: { id } });
 
-      if (user == null){
+      if (!user) {
         throw new NotFoundException('User not found');
       }
       
-      return user
+      return user;
     } catch (error) {
-      throw error;
+      throw new InternalServerErrorException(error);
     }
   }
 
@@ -54,21 +57,16 @@ export class UserService {
     await queryRunner.startTransaction();
     
     try {
-      const user: User | null = await queryRunner.manager.findOne(User, { where: { id } });
+      const user: User = await this.findOne(id);
 
-      if (user == null) {
-        throw new NotFoundException('User not found with id: ' + id);
+      if (updateUserDto.password) {
+        updateUserDto.password = await CryptoService.encrypt(updateUserDto.password);
       }
 
-      if(!updateUserDto.password){
-        throw new BadRequestException('Password is required')
-      }
-
-      updateUserDto.password = await CryptoService.encrypt(updateUserDto.password);
       await queryRunner.manager.update(User, id, updateUserDto);
       await queryRunner.commitTransaction();
 
-      const userUpdated: User | null = await queryRunner.manager.findOne(User, { where: { id }});
+      const userUpdated: User | null = await queryRunner.manager.findOne(User, { where: { id } });
 
       return userUpdated;
     } catch (error) {
@@ -84,16 +82,7 @@ export class UserService {
     await queryRunner.startTransaction();
     
     try {
-      if (!id || isNaN(id) || id <= 0) {
-        throw new BadRequestException('ID must be a positive number');
-      }
-
-      const user: User | null = await queryRunner.manager.findOne(User, { where: { id } });
-
-      if (user == null) {
-        throw new NotFoundException('User not found with id: ' + id);
-      }
-
+      await this.findOne(id);
       await queryRunner.manager.delete(User, id);
       await queryRunner.commitTransaction();
 
@@ -106,25 +95,43 @@ export class UserService {
     }
   }
 
-  async LoginAsync(userDto: LoginUserDTO): Promise<boolean> {
+  async LoginAsync(userDto: LoginUserDTO) {
     try {
-      const email = userDto.email;
+      const email = userDto.email.trim();
       const foundUser = await this.repository.findOne({ where: { email } });
   
       if (!foundUser) {
-        return false;
+        throw new UnauthorizedException('Invalid credentials');
       }
   
       const isPasswordCorrect = await CryptoService.compare(userDto.password, foundUser.password);
   
       if (!isPasswordCorrect) {
-        return false;
+        throw new UnauthorizedException('Invalid credentials');
       }
-  
-      return true;
+
+      const accessToken = this.authService.token(foundUser);
+
+      return accessToken;
     } catch (error) {
       throw error;
     }
   } 
+
+  async refreshToken(refreshToken: string) {
+    try {
+      return this.authService.refreshToken(refreshToken)
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async logout(userId: number) {
+    try {
+      return this.authService.logout(userId);
+    } catch (error) {
+      throw new InternalServerErrorException('Error logging out');
+    }
+  }  
 
 }

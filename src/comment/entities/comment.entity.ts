@@ -19,6 +19,9 @@ export class Comment {
   @Column({ default: true })
   isActived: boolean;
 
+  @Column( {default: false })
+  isBlocked: boolean = false;
+
   @Column({ default: 0, nullable: true })
   parentId: number;
 

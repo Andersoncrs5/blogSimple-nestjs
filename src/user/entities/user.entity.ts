@@ -21,8 +21,14 @@ export class User {
     @Column({ type: "varchar" , length: 350 })
     password: string
 
+    @Column({ type: "varchar", nullable: true })
+    refreshToken: string | null
+
     @Column( {default: false })
     isAdm: boolean;
+
+    @Column( {default: false })
+    isBlocked: boolean = false;
 
     @CreateDateColumn()
     createdAt: Date

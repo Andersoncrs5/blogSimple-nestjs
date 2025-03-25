@@ -78,6 +78,13 @@ http://localhost:3000/api
 
 Feel free to fork this project and submit pull requests with improvements or bug fixes.
 
-## nest features
+## novelties
 
-jwt
+- JWT 
+- Optimizations
+
+## next features
+
+- table notifications
+- system adm
+- table flowers

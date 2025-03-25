@@ -5,16 +5,14 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
 import { User } from 'src/user/entities/user.entity';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private readonly repository: Repository<Category>,
-
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>
-
+    private readonly userService : UserService,
   ){}
 
   async create(id:number, createCategoryDto: CreateCategoryDto) {
@@ -22,16 +20,7 @@ export class CategoryService {
     await queryRunner.startTransaction();
     
     try {
-      if (!id) {
-        throw new BadRequestException('Id is required');
-      }
-
-      const user: User | null = await queryRunner.manager.findOne(User, { where : { id } });
-
-      if(user == null) {
-        throw new NotFoundException('User not found')
-      }
-
+      const user: User = await this.userService.findOne(id);
 
       const categoryCreate = { ...createCategoryDto, user }
       categoryCreate.nameUser = user.name
@@ -57,12 +46,16 @@ export class CategoryService {
     }
   }
 
-  async findOne(id: number): Promise<Category | null> {
+  async findOne(id: number): Promise<Category> {
     try {
-      if (!id) {
-        throw new BadRequestException('Id is required');
+      if (!id || isNaN(id) || id <= 0) {
+        throw new BadRequestException('ID must be a positive number');
       }
       const category: Category | null = await this.repository.findOne({ where : { id } });
+
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
 
       return category;
     } catch (e) {
@@ -75,15 +68,7 @@ export class CategoryService {
     await queryRunner.startTransaction();
     
     try {
-      if (!id) {
-        throw new BadRequestException('');
-      }
-
-      const category: Category | null = await queryRunner.manager.findOne(Category, { where: { id } });
-
-      if ( category == null ){
-        throw new NotFoundException('Category not found with id: '+id)
-      }
+      const category: Category = await this.findOne(id);
 
       await queryRunner.manager.update(Category, id, updateCategoryDto)
       
@@ -103,15 +88,7 @@ export class CategoryService {
     await queryRunner.startTransaction();
     
     try {
-      if (!id) {
-        throw new BadRequestException('');
-      }
-
-      const category: Category | null = await queryRunner.manager.findOne(Category, { where: { id } });
-
-      if ( category == null ){
-        throw new NotFoundException('Category not found with id: '+id)
-      }
+      const category: Category = await this.findOne(id);
 
       await queryRunner.manager.delete(Category, id)
       await queryRunner.commitTransaction();
@@ -130,16 +107,7 @@ export class CategoryService {
     await queryRunner.startTransaction();
     
     try {
-      if (!id) {
-        throw new BadRequestException('Id is required');
-      }
-
-      const category: Category | null = await queryRunner.manager.findOne(Category, { where: { id } });
-
-      if ( category == null ){
-        throw new NotFoundException('Category not found with id: '+id)
-      }
-
+      const category: Category = await this.findOne(id);
       category.isActived  = !category.isActived
 
       await queryRunner.manager.update(Category, id, category)
@@ -153,6 +121,4 @@ export class CategoryService {
       await queryRunner.release();
     }
   }
-
-
 }

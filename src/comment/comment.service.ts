@@ -6,18 +6,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
+import { UserService } from 'src/user/user.service';
+import { PostService } from 'src/post/post.service';
 
 @Injectable()
 export class CommentService {
   constructor(
     @InjectRepository(Comment)
     private readonly repository: Repository<Comment>,
-
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-
-    @InjectRepository(Post)
-    private readonly postRepository: Repository<Post>
+    private readonly userService : UserService,
+    private readonly postService : PostService,
   ){}
 
   async create(idPost: number, idUser: number, createCommentDto: CreateCommentDto) {
@@ -25,25 +23,8 @@ export class CommentService {
     await queryRunner.startTransaction();
     
     try {
-      if (!idPost || isNaN(idPost) || idPost <= 0) {
-        throw new BadRequestException('Post ID must be a positive number');
-      }
-
-      if (!idUser || isNaN(idUser) || idUser <= 0) {
-        throw new BadRequestException('User ID must be a positive number');
-      }
-
-      const user: User | null = await this.userRepository.findOne({ where: { id: idUser } });
-
-      if (!user) {
-        throw new NotFoundException(`User not found with ID: ${idUser}`);
-      }
-
-      const post: Post | null = await this.postRepository.findOne({ where: { id: idPost } });
-
-      if (!post) {
-        throw new NotFoundException(`Post not found with ID: ${idPost}`);
-      }
+      const user: User = await this.userService.findOne(idUser);
+      const post: Post = await this.postService.findOne(idPost);
 
       const commentCreated = { ...createCommentDto, post, user, nameUser: user.name };
       
@@ -61,16 +42,7 @@ export class CommentService {
 
   async findAllOfPost(id: number): Promise<Comment[]> {
     try {
-      if (!id || isNaN(id) || id <= 0) {
-        throw new BadRequestException('ID must be a positive number');
-      }
-
-      const post: Post | null = await this.postRepository.findOne({ where: { id } });
-
-      if (!post) {
-        throw new NotFoundException(`Post not found with ID: ${id}`);
-      }
-
+      const post: Post = await this.postService.findOne(id);
       return await this.repository.find({ where: { post: { id }, isActived: true, parentId : 0 } });
     } catch (e) {
       throw new InternalServerErrorException('Error retrieving comments', e.message);
@@ -79,15 +51,7 @@ export class CommentService {
 
   async findAllOfUser(id: number): Promise<Comment[]> {
     try {
-      if (!id || isNaN(id) || id <= 0) {
-        throw new BadRequestException('ID must be a positive number');
-      }
-
-      const user: User | null = await this.userRepository.findOne({ where: { id } });
-
-      if (!user) {
-        throw new NotFoundException(`User not found with ID: ${id}`);
-      }
+      const user: User = await this.userService.findOne(id);
 
       return await this.repository.find({ where: { user: { id } } });
     } catch (e) {
@@ -95,7 +59,7 @@ export class CommentService {
     }
   }
 
-  async findOne(id: number): Promise<Comment | null> {
+  async findOne(id: number): Promise<Comment> {
     try {
       if (!id || isNaN(id) || id <= 0) {
         throw new BadRequestException('ID must be a positive number');
@@ -118,15 +82,7 @@ export class CommentService {
     await queryRunner.startTransaction();
 
     try {
-      if (!id || isNaN(id) || id <= 0) {
-        throw new BadRequestException('ID must be a positive number');
-      }
-
-      const comment: Comment | null = await queryRunner.manager.findOne(Comment, { where: { id } });
-
-      if (!comment) {
-        throw new NotFoundException(`Comment not found with ID: ${id}`);
-      }
+      const comment: Comment = await this.findOne(id);
 
       const updatedComment = { ...comment, ...updateCommentDto };
       updatedComment.isEdited = true
@@ -180,25 +136,8 @@ export class CommentService {
     await queryRunner.startTransaction();
     
     try {
-      if (!idComment) {
-        throw new BadRequestException('Id of comment is required');
-      }
-
-      const comment: Comment | null = await this.repository.findOne({ where: { id: idComment } });
-
-      if (!comment) {
-        throw new NotFoundException(`Comment not found with id: ${idComment}`);
-      }
-
-      if (!idUser) {
-        throw new BadRequestException('Id of user is required');
-      }
-
-      const user: User | null = await this.userRepository.findOne({ where: { id: idUser } });
-
-      if (!user) {
-        throw new NotFoundException(`User not found with id: ${idUser}`);
-      }
+      const comment: Comment = await this.findOne(idComment);
+      const user: User = await this.userService.findOne(idUser);
 
       const commentCreated = queryRunner.manager.create(Comment, {
         ...createCommentDto,
@@ -222,21 +161,11 @@ export class CommentService {
 
   async findAllOfComment(id: number): Promise<Comment[]> {
     try {
-      if (!id || isNaN(id) || id <= 0) {
-        throw new BadRequestException('ID must be a positive number');
-      }
-
-      const comment: Comment | null = await this.repository.findOne({ where: { id } });
-
-      if (!comment) {
-        throw new NotFoundException(`Comment not found with ID: ${id}`);
-      }
+      const comment: Comment = await this.findOne(id);
 
       return await this.repository.find({ where: { parentId : id } });
     } catch (e) {
       throw new InternalServerErrorException('Error retrieving comments', e.message);
     }
   }
-
-
 }

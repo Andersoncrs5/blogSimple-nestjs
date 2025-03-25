@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { LikeService } from './like.service';
 import { LikeController } from './like.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Post } from 'src/post/entities/post.entity';
-import { User } from 'src/user/entities/user.entity';
 import { Like } from './entities/like.entity';
+import { UserModule } from 'src/user/user.module';
+import { PostModule } from 'src/post/post.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, Like, User])], 
+  imports: [TypeOrmModule.forFeature([Like]), UserModule, PostModule ], 
   controllers: [LikeController],
   providers: [LikeService],
 })

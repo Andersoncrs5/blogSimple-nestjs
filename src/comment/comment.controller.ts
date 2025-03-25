@@ -1,50 +1,56 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('comment')
 export class CommentController {
-  constructor(private readonly commentService: CommentService) {}
+  constructor(private readonly service: CommentService) {}
 
-  @Post(':idPost/:idUser')
-  async create(@Param('idPost') idPost: number, @Param('idUser') idUser: number, @Body() createCommentDto: CreateCommentDto) {
-    return await this.commentService.create(idPost, idUser, createCommentDto);
+  @Post(':idPost')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async create(@Param('idPost') idPost: number, @Req() req, @Body() createCommentDto: CreateCommentDto) {
+    return await this.service.create(idPost, +req.user.id, createCommentDto);
   }
 
   @Get('findAllOfPost/:id')
   async findAllOfPost(@Param('id') id: number) {
-    return await this.commentService.findAllOfPost(id);
+    return await this.service.findAllOfPost(id);
   }
 
-  @Get('findAllOfUser/:id')
-  async findAllOfUser(@Param('id') id: number) {
-    return await this.commentService.findAllOfUser(id);
+  @Get('/findAllofUser')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async findAllOfUser(@Req() req) {
+    return this.service.findAllOfUser(+req.user.sub);
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return await this.commentService.findOne(+id);
+    return await this.service.findOne(+id);
   }
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
-    return await this.commentService.update(+id, updateCommentDto);
+    return await this.service.update(+id, updateCommentDto);
   }
 
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    return await this.commentService.remove(+id);
+    return await this.service.remove(+id);
   }
 
-  @Post('/createOnComment/:idComment/:idUser')
-  async createOnComment(@Param('idComment') idComment: number, @Param('idUser') idUser: number, @Body() createCommentDto: CreateCommentDto) {
-    return await this.commentService.createOnComment(idComment, idUser, createCommentDto);
+  @Post('/createOnComment/:idComment/')
+  async createOnComment(@Param('idComment') idComment: number, @Req() req, @Body() createCommentDto: CreateCommentDto) {
+    return await this.service.createOnComment(idComment, +req.user.sub, createCommentDto);
   }
 
   @Get('/findAllOfComment/:id')
   async findAllOfComment(@Param('id') id: string) {
-    return await this.commentService.findAllOfComment(+id);
+    return await this.service.findAllOfComment(+id);
   }
   
 
